@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Gaya Belajar: Edisi Ular Tangga (VAK)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Fredoka', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2.2s infinite',
+                        'pulse-fast': 'pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: radial-gradient(circle at top left, #e0e7ff 0%, #fef3c7 45%, #fce7f3 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* 3D Button Style */
+        .btn-3d {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+        }
+        .btn-3d:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 0 rgba(0, 0, 0, 0.18);
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+        }
+        .btn-3d:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Board Container & Grid */
+        .board-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 510px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            width: 100%;
+            height: 100%;
+            gap: 5px;
+            padding: 8px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 12px 30px rgba(79, 70, 229, 0.16), 0 6px 0 #c7d2fe;
+            border: 4px solid #818cf8;
+        }
+
+        .board-cell {
+            position: relative;
+            border-radius: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4px 6px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+        }
+
+        /* SVG Overlay for Snakes & Ladders */
+        .board-svg-overlay {
+            position: absolute;
+            inset: 8px;
+            width: calc(100% - 16px);
+            height: calc(100% - 16px);
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        /* Real-time Animated Player Tokens */
+        .player-token {
+            position: absolute;
+            width: 11%;
+            height: 11%;
+            z-index: 25;
+            transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        transform 0.25s ease;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.32));
+        }
+
+        .token-hop {
+            transform: scale(1.28) translateY(-10px);
+        }
+
+        /* Dice Animation */
+        @keyframes diceShake {
+            0% { transform: rotate(0deg) scale(1); }
+            20% { transform: rotate(-18deg) scale(1.12); }
+            40% { transform: rotate(18deg) scale(1.15); }
+            60% { transform: rotate(-14deg) scale(1.1); }
+            80% { transform: rotate(14deg) scale(1.08); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+        .dice-rolling {
+            animation: diceShake 0.45s ease-in-out infinite;
+        }
+
+        .dice-pip {
+            width: 11px;
+            height: 11px;
+            border-radius: 9999px;
+            background-color: #1e1b4b;
+            box-shadow: inset 0 2px 2px rgba(0,0,0,0.4);
+        }
+
+        /* Modal Backdrop & Entry */
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.88) translateY(12px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-pop-in {
+            animation: popIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Confetti Particle */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 60;
+            pointer-events: none;
+            animation: confettiFall linear forwards;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-indigo-200">
+
+    <!-- Top Navigation / Status Bar -->
+    <header class="w-full max-w-6xl mx-auto px-4 pt-3 pb-2 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 bg-white/90 backdrop-blur px-3.5 py-2 rounded-2xl shadow-sm border-2 border-indigo-100">
+            <span class="text-2xl">🎲</span>
+            <div>
+                <h1 class="text-sm sm:text-base font-bold text-indigo-900 leading-tight">Petualangan Gaya Belajar</h1>
+                <p class="text-[11px] sm:text-xs text-indigo-500 font-medium">Edisi Ular Tangga • VAK (SMP/SMK)</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Sound Toggle Button -->
+            <button id="btn-toggle-sound" onclick="SoundEngine.toggleMute()" title="Suara Efek"
+                class="btn-3d bg-white hover:bg-amber-50 text-slate-700 border-2 border-slate-200 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5">
+                <span id="sound-icon">🔊</span>
+                <span class="hidden sm:inline" id="sound-label">Suara Aktif</span>
+            </button>
+
+            <!-- Quick Home Button (Visible during Game/Leaderboard) -->
+            <button id="btn-nav-home" onclick="App.confirmReturnHome()"
+                class="hidden btn-3d bg-rose-100 hover:bg-rose-200 text-rose-700 border-2 border-rose-200 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5">
+                <span>🏠</span>
+                <span class="hidden sm:inline">Menu Awal</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="w-full max-w-6xl mx-auto px-4 py-2 sm:py-4">
+
+        <!-- ========================================================= -->
+        <!-- 1. START SCREEN (HALAMAN AWAL)                            -->
+        <!-- ========================================================= -->
+        <section id="screen-start" class="max-w-xl mx-auto animate-pop-in">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-indigo-200 relative overflow-hidden">
+                <!-- Decorative Badges -->
+                <div class="flex flex-wrap justify-center gap-2 mb-4">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">👁️ Visual</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800 border border-sky-300">🎧 Auditori</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">🤸 Kinestetik</span>
+                </div>
+
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-indigo-950 tracking-tight">
+                        Petualangan Gaya Belajar
+                    </h2>
+                    <p class="text-indigo-600 font-semibold text-sm sm:text-base mt-1">
+                        Edisi Ular Tangga Interaktif • Bimbingan Konseling & Projek IPAS
+                    </p>
+                    <p class="text-slate-500 text-xs sm:text-sm mt-2 max-w-md mx-auto">
+                        Kenali strategi belajarmu! Jawab kuis di kotak spesial <span class="font-bold text-amber-600">⭐</span> untuk menaiki tangga kebiasaan efektif dan menghindari ular distraksi belajar.
+                    </p>
+                </div>
+
+                <!-- Registration Form -->
+                <form id="start-form" onsubmit="App.startGame(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <!-- Player 1 (Red) -->
+                        <div class="bg-rose-50/80 p-3.5 rounded-2xl border-2 border-rose-200">
+                            <label for="input-p1" class="flex items-center gap-2 text-xs font-bold text-rose-700 uppercase tracking-wider mb-1.5">
+                                <span class="w-4 h-4 rounded-full bg-rose-500 inline-block shadow-sm"></span>
+                                Pemain 1 (Merah)
+                            </label>
+                            <input type="text" id="input-p1" required maxlength="18" placeholder="Contoh: Raka"
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-rose-200 focus:border-rose-500 focus:outline-none text-slate-800 font-semibold text-sm">
+                        </div>
+
+                        <!-- Player 2 (Blue) -->
+                        <div class="bg-blue-50/80 p-3.5 rounded-2xl border-2 border-blue-200">
+                            <label for="input-p2" class="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-wider mb-1.5">
+                                <span class="w-4 h-4 rounded-full bg-blue-500 inline-block shadow-sm"></span>
+                                Pemain 2 (Biru)
+                            </label>
+                            <input type="text" id="input-p2" required maxlength="18" placeholder="Contoh: Nabila"
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-blue-200 focus:border-blue-500 focus:outline-none text-slate-800 font-semibold text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Class & School (Team) -->
+                    <div class="bg-indigo-50/80 p-3.5 rounded-2xl border-2 border-indigo-200">
+                        <label for="input-team" class="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1.5">
+                            <span>🏫</span> Kelas & Sekolah (Tim)
+                        </label>
+                        <input type="text" id="input-team" required maxlength="36" placeholder="Contoh: VIII-B / SMPN 1 Nusantara atau X-TKJ / SMKN 2"
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-indigo-200 focus:border-indigo-500 focus:outline-none text-slate-800 font-semibold text-sm">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                        <button type="submit"
+                            class="btn-3d flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 px-6 rounded-2xl text-base sm:text-lg flex items-center justify-center gap-2">
+                            <span>🚀</span> Mulai Petualangan
+                        </button>
+                        <button type="button" onclick="App.showLeaderboard()"
+                            class="btn-3d bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold py-3.5 px-5 rounded-2xl text-base flex items-center justify-center gap-2">
+                            <span>🏆</span> Leaderboard
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Mini How-To-Play Guide -->
+                <div class="mt-6 pt-4 border-t-2 border-dashed border-slate-200 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">
+                        <div class="text-lg">🪜</div>
+                        <div class="font-bold text-emerald-800">Tangga Belajar</div>
+                        <div class="text-emerald-600 text-[11px]">Jawab benar → Naik!</div>
+                    </div>
+                    <div class="bg-rose-50 p-2 rounded-xl border border-rose-200">
+                        <div class="text-lg">🐍</div>
+                        <div class="font-bold text-rose-800">Ular Distraksi</div>
+                        <div class="text-rose-600 text-[11px]">Jawab salah → Turun!</div>
+                    </div>
+                    <div class="bg-amber-50 p-2 rounded-xl border border-amber-200">
+                        <div class="text-lg">⭐</div>
+                        <div class="font-bold text-amber-800">Bintang Kuis</div>
+                        <div class="text-amber-600 text-[11px]">Jawab benar → +2 Maju!</div>
+                    </div>
+                </div>
+
+                <!-- Creator Credit -->
+                <div class="mt-5 pt-3 border-t border-slate-100 text-center">
+                    <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold shadow-sm">
+                        <span>✨</span> Creator: <strong>Istianah</strong>
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 2. GAME SCREEN (HALAMAN PERMAINAN)                        -->
+        <!-- ========================================================= -->
+        <section id="screen-game" class="hidden animate-pop-in">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
+                
+                <!-- LEFT COLUMN: 5x5 ZIG-ZAG BOARD -->
+                <div class="lg:col-span-7 flex flex-col items-center">
+                    <div class="board-wrapper">
+                        <!-- 5x5 Grid Rendered via JS -->
+                        <div id="board-grid" class="board-grid"></div>
+
+                        <!-- SVG Overlay for Snakes & Ladders -->
+                        <svg id="board-svg" class="board-svg-overlay" viewBox="0 0 500 500" preserveAspectRatio="none"></svg>
+
+                        <!-- Player 1 Token (Red) -->
+                        <div id="token-p1" class="player-token" title="Pemain 1 (Merah)">
+                            <svg viewBox="0 0 64 64" class="w-full h-full">
+                                <circle cx="32" cy="32" r="28" fill="#ef4444" stroke="#ffffff" stroke-width="5"/>
+                                <circle cx="32" cy="24" r="9" fill="#fee2e2"/>
+                                <path d="M16 48 C16 37, 48 37, 48 48" fill="#fee2e2"/>
+                                <text x="32" y="57" text-anchor="middle" font-size="11" font-weight="bold" fill="#7f1d1d">P1</text>
+                            </svg>
+                        </div>
+
+                        <!-- Player 2 Token (Blue) -->
+                        <div id="token-p2" class="player-token" title="Pemain 2 (Biru)">
+                            <svg viewBox="0 0 64 64" class="w-full h-full">
+                                <circle cx="32" cy="32" r="28" fill="#3b82f6" stroke="#ffffff" stroke-width="5"/>
+                                <circle cx="32" cy="24" r="9" fill="#dbeafe"/>
+                                <path d="M16 48 C16 37, 48 37, 48 48" fill="#dbeafe"/>
+                                <text x="32" y="57" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">P2</text>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Live Status Banner below board -->
+                    <div id="game-status-banner"
+                        class="mt-3 w-full max-w-[510px] bg-white/95 border-2 border-indigo-200 rounded-2xl px-4 py-2.5 text-center shadow-sm">
+                        <p id="status-text" class="text-sm sm:text-base font-semibold text-indigo-900">
+                            Giliran <span class="text-rose-600 font-bold">Pemain 1</span> mengocok dadu!
+                        </p>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: CONTROLS, TURN INDICATOR & LEGEND -->
+                <div class="lg:col-span-5 space-y-4">
+                    
+                    <!-- Team Header Card -->
+                    <div class="bg-white/90 rounded-2xl px-4 py-3 border-2 border-indigo-100 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400">Identitas Tim</span>
+                            <h3 id="display-team" class="font-bold text-indigo-950 text-sm sm:text-base">Kelas & Sekolah</h3>
+                        </div>
+                        <button onclick="App.showLeaderboard()" class="text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-xl border border-amber-300 transition">
+                            🏆 Skor Terbaik
+                        </button>
+                    </div>
+
+                    <!-- Players Status Cards -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Player 1 Card -->
+                        <div id="card-p1" class="bg-white rounded-2xl p-3.5 border-4 border-rose-500 shadow-md transition-all duration-300 relative">
+                            <span id="badge-turn-p1" class="absolute -top-3 right-3 bg-rose-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">
+                                GILIRANMU!
+                            </span>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-4 h-4 rounded-full bg-rose-500 shrink-0"></span>
+                                <h4 id="display-p1-name" class="font-bold text-slate-800 truncate text-sm sm:text-base">Pemain 1</h4>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-slate-600 bg-rose-50 rounded-xl px-2.5 py-1.5">
+                                <span>Kotak: <strong id="display-p1-pos" class="text-rose-600 text-sm">1</strong>/25</span>
+                                <span>Lempar: <strong id="display-p1-rolls">0</strong>x</span>
+                            </div>
+                            <div class="mt-1.5 text-[11px] text-slate-500 flex justify-between px-1">
+                                <span>Kuis Benar:</span>
+                                <strong id="display-p1-correct" class="text-emerald-600">0</strong>
+                            </div>
+                        </div>
+
+                        <!-- Player 2 Card -->
+                        <div id="card-p2" class="bg-white/80 rounded-2xl p-3.5 border-2 border-slate-200 shadow-sm transition-all duration-300 relative opacity-80">
+                            <span id="badge-turn-p2" class="hidden absolute -top-3 right-3 bg-blue-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">
+                                GILIRANMU!
+                            </span>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-4 h-4 rounded-full bg-blue-500 shrink-0"></span>
+                                <h4 id="display-p2-name" class="font-bold text-slate-800 truncate text-sm sm:text-base">Pemain 2</h4>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-slate-600 bg-blue-50 rounded-xl px-2.5 py-1.5">
+                                <span>Kotak: <strong id="display-p2-pos" class="text-blue-600 text-sm">1</strong>/25</span>
+                                <span>Lempar: <strong id="display-p2-rolls">0</strong>x</span>
+                            </div>
+                            <div class="mt-1.5 text-[11px] text-slate-500 flex justify-between px-1">
+                                <span>Kuis Benar:</span>
+                                <strong id="display-p2-correct" class="text-emerald-600">0</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Dice Box -->
+                    <div class="bg-white rounded-3xl p-5 border-4 border-indigo-200 shadow-lg text-center">
+                        <div class="flex items-center justify-center gap-5">
+                            <!-- 3D-Styled Dice Face -->
+                            <div id="dice-box" onclick="App.rollDice()"
+                                class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-white to-slate-100 rounded-2xl border-4 border-indigo-400 shadow-[0_6px_0_#818cf8] flex items-center justify-center cursor-pointer select-none p-3">
+                                <div id="dice-face" class="w-full h-full grid grid-cols-3 grid-rows-3 place-items-center">
+                                    <!-- Pips rendered dynamically -->
+                                </div>
+                            </div>
+
+                            <div class="text-left flex-1">
+                                <p class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kontrol Dadu</p>
+                                <p id="dice-result-label" class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Siap Dikocok!</p>
+                                <button id="btn-roll-dice" onclick="App.rollDice()"
+                                    class="btn-3d w-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-bold py-3 px-4 rounded-2xl text-sm sm:text-base flex items-center justify-center gap-2">
+                                    <span>🎲</span> Kocok Dadu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Special Tiles Legend (Rute Tangga & Ular) -->
+                    <div class="bg-white/95 rounded-2xl p-4 border-2 border-indigo-100 shadow-sm">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900 mb-2.5 flex items-center gap-1.5">
+                            <span>⭐</span> Peta Kotak Spesial Gaya Belajar
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2">
+                                <div class="font-bold text-emerald-800 mb-1">🪜 Tangga Kebiasaan Efektif:</div>
+                                <ul class="space-y-0.5 text-emerald-700 text-[11px]">
+                                    <li>• <strong>3 → 13:</strong> Mind Mapping Visual</li>
+                                    <li>• <strong>7 → 17:</strong> Rekam Ringkasan Suara</li>
+                                    <li>• <strong>11 → 21:</strong> Praktik & Simulasi Lab</li>
+                                    <li>• <strong>15 → 23:</strong> Diskusi Tutor Sebaya</li>
+                                </ul>
+                            </div>
+                            <div class="bg-rose-50 border border-rose-200 rounded-xl p-2">
+                                <div class="font-bold text-rose-800 mb-1">🐍 Ular Hambatan Belajar:</div>
+                                <ul class="space-y-0.5 text-rose-700 text-[11px]">
+                                    <li>• <strong>12 → 4:</strong> Distraksi Notifikasi HP</li>
+                                    <li>• <strong>19 → 8:</strong> Sistem Kebut Semalam</li>
+                                    <li>• <strong>24 → 14:</strong> Menunda Tugas (Malas)</li>
+                                    <li>• <strong>⭐ 5,9,16,20:</strong> Bonus +2 Langkah</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 3. GAME OVER SCREEN (HALAMAN PEMENANG & STATISTIK)        -->
+        <!-- ========================================================= -->
+        <section id="screen-gameover" class="hidden max-w-xl mx-auto animate-pop-in">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-amber-300 text-center relative overflow-hidden">
+                <div class="text-6xl mb-2 animate-bounce">🏆</div>
+                <span class="inline-block px-3.5 py-1 rounded-full bg-amber-100 text-amber-800 font-bold text-xs uppercase tracking-wider mb-2">
+                    Misi Gaya Belajar Tuntas!
+                </span>
+                <h2 id="winner-title" class="text-2xl sm:text-4xl font-bold text-indigo-950 mb-1">
+                    Selamat, Pemain 1!
+                </h2>
+                <p id="winner-team" class="text-sm font-semibold text-indigo-600 mb-5">
+                    Tim: Kelas & Sekolah
+                </p>
+
+                <!-- Winner Highlight Card -->
+                <div class="bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300 rounded-2xl p-4 mb-5">
+                    <div class="text-xs font-bold text-amber-700 uppercase">Skor Akhir Pemenang</div>
+                    <div id="winner-score" class="text-4xl font-extrabold text-amber-600 my-1">1,450</div>
+                    <div class="text-xs text-slate-600">
+                        Tersimpan otomatis ke papan peringkat lokal!
+                    </div>
+                </div>
+
+                <!-- Match Comparison Stats -->
+                <div class="grid grid-cols-2 gap-3 mb-6 text-left">
+                    <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-3.5">
+                        <div class="flex items-center gap-1.5 font-bold text-rose-700 text-sm mb-2">
+                            <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                            <span id="stat-p1-name" class="truncate">Pemain 1</span>
+                        </div>
+                        <div class="space-y-1 text-xs text-slate-700">
+                            <div class="flex justify-between"><span>Posisi Akhir:</span> <strong id="stat-p1-pos">25</strong></div>
+                            <div class="flex justify-between"><span>Total Lemparan:</span> <strong id="stat-p1-rolls">8x</strong></div>
+                            <div class="flex justify-between"><span>Kuis Benar:</span> <strong id="stat-p1-quiz" class="text-emerald-600">3/3</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-3.5">
+                        <div class="flex items-center gap-1.5 font-bold text-blue-700 text-sm mb-2">
+                            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                            <span id="stat-p2-name" class="truncate">Pemain 2</span>
+                        </div>
+                        <div class="space-y-1 text-xs text-slate-700">
+                            <div class="flex justify-between"><span>Posisi Akhir:</span> <strong id="stat-p2-pos">18</strong></div>
+                            <div class="flex justify-between"><span>Total Lemparan:</span> <strong id="stat-p2-rolls">7x</strong></div>
+                            <div class="flex justify-between"><span>Kuis Benar:</span> <strong id="stat-p2-quiz" class="text-emerald-600">2/3</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="App.restartSamePlayers()"
+                        class="btn-3d flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-5 rounded-2xl text-base flex items-center justify-center gap-2">
+                        <span>🔄</span> Main Lagi
+                    </button>
+                    <button onclick="App.showLeaderboard()"
+                        class="btn-3d flex-1 bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold py-3.5 px-5 rounded-2xl text-base flex items-center justify-center gap-2">
+                        <span>🏆</span> Lihat Leaderboard
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 4. LEADERBOARD SCREEN (PODIUM 3 BESAR & DAFTAR SKOR)      -->
+        <!-- ========================================================= -->
+        <section id="screen-leaderboard" class="hidden max-w-2xl mx-auto animate-pop-in">
+            <div class="bg-white rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-amber-200">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-6">
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-indigo-950 flex items-center gap-2">
+                            <span>🏆</span> Papan Juara VAK
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-500">Peringkat efisiensi lemparan & ketepatan kuis gaya belajar</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="App.confirmResetLeaderboard()"
+                            class="btn-3d bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 border border-slate-300 px-3 py-2 rounded-xl text-xs font-bold">
+                            🗑️ Reset Data
+                        </button>
+                        <button onclick="App.backFromLeaderboard()"
+                            class="btn-3d bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold">
+                            ← Kembali
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TOP 3 PODIUM -->
+                <div id="podium-container" class="grid grid-cols-3 gap-2 sm:gap-4 items-end pt-6 pb-4 px-2 mb-6 bg-gradient-to-b from-indigo-50/70 to-amber-50/70 rounded-2xl border-2 border-indigo-100">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- FULL SCORE LIST -->
+                <div class="space-y-2 max-h-72 overflow-y-auto pr-1" id="leaderboard-list">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- MODAL 1: INTERACTIVE QUIZ MODAL (KUIS GAYA BELAJAR VAK)   -->
+    <!-- ========================================================= -->
+    <div id="modal-quiz" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border-4 border-indigo-300 animate-pop-in max-h-[92vh] overflow-y-auto">
+            <!-- Quiz Context Header -->
+            <div class="flex items-center justify-between gap-2 mb-3">
+                <span id="quiz-type-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                    ⭐ Kotak Spesial
+                </span>
+                <span id="quiz-category-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
+                    Gaya Belajar VAK
+                </span>
+            </div>
+
+            <!-- Event Story Box (Ladder / Snake / Bonus context) -->
+            <div id="quiz-event-banner" class="mb-4 p-3 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-xs sm:text-sm text-emerald-900 font-medium">
+                🪜 Tangga Kebiasaan Belajar! Jawab benar untuk naik ke kotak 13!
+            </div>
+
+            <!-- Question Text -->
+            <h3 id="quiz-question" class="text-base sm:text-lg font-bold text-slate-900 leading-snug mb-4">
+                Pertanyaan akan muncul di sini...
+            </h3>
+
+            <!-- Multiple Choice Options -->
+            <div id="quiz-options" class="space-y-2.5">
+                <!-- Buttons generated dynamically -->
+            </div>
+
+            <!-- Feedback & Explanation Box (Hidden until answered) -->
+            <div id="quiz-feedback" class="hidden mt-4 p-3.5 rounded-2xl border-2 text-xs sm:text-sm">
+                <div id="quiz-feedback-title" class="font-bold text-base mb-1"></div>
+                <p id="quiz-feedback-desc" class="leading-relaxed"></p>
+                <button id="btn-quiz-continue" onclick="App.resolveQuizOutcome()"
+                    class="btn-3d mt-3 w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl text-sm sm:text-base">
+                    Lanjutkan Langkah →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL 2: CUSTOM CONFIRMATION DIALOG (NO alert/confirm)    -->
+    <!-- ========================================================= -->
+    <div id="modal-confirm" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border-4 border-slate-200 text-center animate-pop-in">
+            <div id="confirm-icon" class="text-4xl mb-2">⚠️</div>
+            <h3 id="confirm-title" class="text-lg font-bold text-slate-900 mb-1">Konfirmasi</h3>
+            <p id="confirm-message" class="text-sm text-slate-600 mb-5">Apakah Anda yakin?</p>
+            <div class="flex gap-3">
+                <button onclick="App.closeConfirm()"
+                    class="btn-3d flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-sm">
+                    Batal
+                </button>
+                <button id="btn-confirm-yes"
+                    class="btn-3d flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl text-sm">
+                    Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- JAVASCRIPT APPLICATION LOGIC & QUESTION BANK              -->
+    <!-- ========================================================= -->
+    <script>
+        /**
+         * =================================================================
+         * 1. WEB AUDIO API SOUND ENGINE (Synthesized SFX, No External URLs)
+         * =================================================================
+         */
+        const SoundEngine = {
+            ctx: null,
+            isMuted: false,
+
+            init() {
+                if (!this.ctx) {
+                    try {
+                        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                        this.ctx = new AudioCtx();
+                    } catch (e) {
+                        console.warn('Web Audio API tidak didukung di browser ini.');
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume().catch(() => {});
+                }
+            },
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                document.getElementById('sound-icon').textContent = this.isMuted ? '🔇' : '🔊';
+                document.getElementById('sound-label').textContent = this.isMuted ? 'Suara Mati' : 'Suara Aktif';
+                if (!this.isMuted) {
+                    this.init();
+                    this.playTone(523.25, 'sine', 0.1, 0.15);
+                }
+            },
+
+            playTone(freq, type = 'sine', duration = 0.15, gainVal = 0.2, delay = 0) {
+                if (this.isMuted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                try {
+                    const now = this.ctx.currentTime + delay;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(gainVal, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + duration);
+                } catch (e) {
+                    // Ignore audio scheduling errors
+                }
+            },
+
+            playDiceRoll() {
+                // Rapid percussive clicks simulating dice rattle
+                const freqs = [240, 320, 280, 390, 310, 440];
+                freqs.forEach((f, idx) => {
+                    this.playTone(f, 'triangle', 0.06, 0.16, idx * 0.065);
+                });
+            },
+
+            playStep(stepIndex = 1) {
+                // Ascending pleasant pop per tile step
+                const baseFreq = 340 + (stepIndex * 35);
+                this.playTone(baseFreq, 'sine', 0.11, 0.2, 0);
+            },
+
+            playCorrect() {
+                // Bright major arpeggio fanfare
+                this.playTone(523.25, 'triangle', 0.16, 0.24, 0);     // C5
+                this.playTone(659.25, 'triangle', 0.16, 0.24, 0.11);  // E5
+                this.playTone(783.99, 'triangle', 0.28, 0.26, 0.22);  // G5
+                this.playTone(1046.50, 'sine', 0.35, 0.22, 0.34);     // C6
+            },
+
+            playWrong() {
+                // Descending sawtooth slide for wrong answer / snake slide
+                this.playTone(330, 'sawtooth', 0.2, 0.16, 0);
+                this.playTone(261.63, 'sawtooth', 0.25, 0.16, 0.16);
+                this.playTone(196.00, 'sawtooth', 0.35, 0.16, 0.34);
+            },
+
+            playWin() {
+                // Victory celebration melody
+                const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+                const times = [0, 0.13, 0.26, 0.40, 0.56, 0.72];
+                notes.forEach((n, i) => {
+                    this.playTone(n, 'triangle', 0.28, 0.26, times[i]);
+                });
+            }
+        };
+
+        /**
+         * =================================================================
+         * 2. BANK SOAL GAYA BELAJAR VAK (30 SOAL PILIHAN GANDA BERKUALITAS)
+         * =================================================================
+         */
+        const QUESTION_BANK = [
+            // --- BAGIAN A: GAYA BELAJAR VISUAL (1 - 10) ---
+            {
+                category: "Tipe Visual 👁️",
+                question: "Siswa dengan gaya belajar Visual paling mudah memahami materi pelajaran apabila guru menggunakan...",
+                options: [
+                    "Ceramah panjang tanpa catatan di papan tulis",
+                    "Diagram, peta konsep (mind map), grafik, dan ilustrasi berwarna",
+                    "Diskusi debat kelompok tanpa media gambar",
+                    "Praktik bongkar pasang mesin tanpa buku panduan"
+                ],
+                answer: 1,
+                explanation: "Pelajar Visual mengandalkan indra penglihatan, sehingga warna, diagram, bagan, dan mind map sangat mempercepat pemahaman mereka."
+            },
+            {
+                category: "Ciri-Ciri Visual 👁️",
+                question: "Manakah ciri khas yang paling sering terlihat pada siswa bergaya belajar Visual?",
+                options: [
+                    "Suka berbicara sendiri saat membaca buku teks",
+                    "Catatan bukunya rapi, teratur, dan sering diberi stabilo warna-warni",
+                    "Selalu mengetuk-ngetuk meja saat sedang berpikir",
+                    "Lebih mudah menghafal lagu daripada mengingat wajah seseorang"
+                ],
+                answer: 1,
+                explanation: "Siswa Visual menyukai keteraturan visual, mencatat dengan rapi, dan menggunakan kode warna (stabilo) untuk menandai poin penting."
+            },
+            {
+                category: "Strategi Visual 👁️",
+                question: "Dina adalah siswi SMP yang memiliki gaya belajar Visual. Cara mencatat paling efektif agar Dina cepat mengingat materi IPA adalah...",
+                options: [
+                    "Merekam suara guru lalu mendengarkannya sambil memejamkan mata",
+                    "Membuat mind map dengan cabang warna-warni dan simbol gambar",
+                    "Membaca buku catatan dengan suara lantang sambil berjalan keliling kamar",
+                    "Menghafal rumus tanpa menuliskannya sama sekali"
+                ],
+                answer: 1,
+                explanation: "Mind mapping memadukan kata kunci, struktur ruang, warna, dan gambar yang sangat sesuai dengan cara kerja otak pembelajar Visual."
+            },
+            {
+                category: "Hambatan Visual 👁️",
+                question: "Lingkungan belajar seperti apa yang paling mudah mengganggu konsentrasi siswa bertipe Visual?",
+                options: [
+                    "Meja belajar yang berantakan dan pemandangan sekitar yang terlalu ramai/berubah-ubah",
+                    "Ruangan yang sunyi tanpa musik",
+                    "Buku pelajaran yang penuh dengan gambar ilustrasi",
+                    "Duduk di barisan paling depan dekat papan tulis"
+                ],
+                answer: 0,
+                explanation: "Gangguan visual seperti meja berantakan atau gerakan orang lewat di depan mata sangat mudah memecah fokus siswa Visual."
+            },
+            {
+                category: "Studi Kasus Visual 👁️",
+                question: "Saat mengikuti pelajaran Sejarah atau Projek IPAS, Rian sering kesulitan jika hanya mendengarkan guru bercerita. Solusi terbaik untuk Rian adalah...",
+                options: [
+                    "Menutup telinga saat guru menjelaskan",
+                    "Membuat garis waktu (timeline) bergambar dari cerita guru tersebut",
+                    "Mengajak teman mengobrol agar tidak mengantuk",
+                    "Menghafal halaman buku secara acak"
+                ],
+                answer: 1,
+                explanation: "Mengubah penjelasan lisan menjadi bentuk visual seperti timeline, tabel, atau sketsa membantu siswa Visual memetakan informasi."
+            },
+            {
+                category: "Media Belajar Visual 👁️",
+                question: "Media pembelajaran digital berikut ini yang paling cocok untuk siswa SMK jurusan Desain Komunikasi Visual (DKV) bertipe Visual adalah...",
+                options: [
+                    "Podcast audio tanpa tampilan layar",
+                    "Video tutorial infografis dengan teks sorotan dan animasi langkah kerja",
+                    "Rekaman radio pendidikan",
+                    "Diskusi telepon tanpa berbagi layar"
+                ],
+                answer: 1,
+                explanation: "Video tutorial yang menampilkan demonstrasi visual, teks sorotan, dan ilustrasi langkah kerja sangat optimal bagi pelajar Visual."
+            },
+            {
+                category: "Ciri-Ciri Visual 👁️",
+                question: "Ketika diminta menjelaskan arah jalan menuju sekolah kepada teman baru, siswa Visual cenderung...",
+                options: [
+                    "Menggambarkan denah atau sketsa rute jalan di atas kertas",
+                    "Menjelaskan panjang lebar lewat telepon tanpa patokan gambar",
+                    "Mengajak temannya langsung berlari bersama",
+                    "Menyanyikan nama-nama jalan dengan nada tertentu"
+                ],
+                answer: 0,
+                explanation: "Pelajar Visual berpikir dalam bentuk gambar/peta mental sehingga lebih nyaman menggambar denah daripada sekadar menjelaskan secara lisan."
+            },
+            {
+                category: "Strategi Mengingat Visual 👁️",
+                question: "Teknik 'Flashcard' (kartu pintar) akan bekerja maksimal bagi siswa Visual jika kartu tersebut dilengkapi dengan...",
+                options: [
+                    "Tulisan hitam-putih yang sangat kecil dan rapat",
+                    "Gambar ikon, warna pembeda kategori, dan tata letak yang bersih",
+                    "Kertas yang bertekstur kasar saja tanpa tulisan",
+                    "Hanya nomor urut tanpa kata kunci"
+                ],
+                answer: 1,
+                explanation: "Kombinasi ikon visual, warna kategori, dan kata kunci singkat memperkuat memori fotografis siswa Visual."
+            },
+            {
+                category: "Studi Kasus Visual 👁️",
+                question: "Posisi duduk di kelas yang paling disarankan bagi siswa dengan gaya belajar Visual adalah...",
+                options: [
+                    "Di barisan depan atau tengah agar pandangan ke papan tulis dan ekspresi guru jelas",
+                    "Di pojok paling belakang terhalang teman yang tinggi",
+                    "Menghadap ke jendela luar kelas",
+                    "Membelakangi layar presentasi"
+                ],
+                answer: 0,
+                explanation: "Duduk di depan membantu siswa Visual melihat tulisan papan tulis, slide presentasi, dan bahasa tubuh guru tanpa halangan."
+            },
+            {
+                category: "Ciri-Ciri Visual 👁️",
+                question: "Saat mengingat kembali materi ujian yang sudah dipelajari semalam, siswa Visual sering kali...",
+                options: [
+                    "Terbayang posisi catatan atau warna stabilo di halaman bukunya",
+                    "Teringat nada suara guru saat marah",
+                    "Menggerakkan kaki seperti sedang menari",
+                    "Harus membaca soal dengan suara keras di ruang ujian"
+                ],
+                answer: 0,
+                explanation: "Pelajar Visual sering 'melihat' kembali halaman catatan di dalam pikirannya saat mengingat jawaban ujian."
+            },
+
+            // --- BAGIAN B: GAYA BELAJAR AUDITORI (11 - 20) ---
+            {
+                category: "Tipe Auditori 🎧",
+                question: "Siswa dengan gaya belajar Auditori mengandalkan indra pendengaran sebagai jalur utama menyerap informasi. Metode belajar yang paling cocok untuk mereka adalah...",
+                options: [
+                    "Membaca dalam hati di tempat yang penuh gambar",
+                    "Berdiskusi, tanya jawab, dan mendengarkan penjelasan lisan atau podcast",
+                    "Merakit komponen elektronik tanpa instruksi suara",
+                    "Menyalin buku teks berulang kali dalam diam"
+                ],
+                answer: 1,
+                explanation: "Pelajar Auditori memproses informasi paling efektif melalui suara, ritme, diskusi interaktif, dan penjelasan lisan."
+            },
+            {
+                category: "Ciri-Ciri Auditori 🎧",
+                question: "Manakah kebiasaan berikut yang menunjukkan ciri kuat siswa bergaya belajar Auditori?",
+                options: [
+                    "Sering menggerakkan bibir atau membaca dengan suara pelan saat belajar mandiri",
+                    "Sangat teliti memperhatikan keserasian warna pakaian",
+                    "Tidak betah duduk dan selalu ingin melompat",
+                    "Lebih suka melihat grafik daripada mendengarkan penjelasan"
+                ],
+                answer: 0,
+                explanation: "Membaca dengan bersuara atau bergumam membantu otak siswa Auditori mendengar dan mengunci informasi yang sedang dibaca."
+            },
+            {
+                category: "Strategi Auditori 🎧",
+                question: "Bima adalah siswa SMK yang bertipe Auditori. Cara terbaik bagi Bima untuk menghafal langkah-langkah keselamatan kerja (K3) adalah...",
+                options: [
+                    "Mengubah poin-poin K3 menjadi lagu/jembatan keledai berirama dan mengucapkannya",
+                    "Mewarnai poster K3 tanpa membacanya",
+                    "Menatap poster K3 dalam diam selama satu jam",
+                    "Berlari mengelilingi bengkel sekolah"
+                ],
+                answer: 0,
+                explanation: "Irama, rima, dan pengulangan lisan membuat informasi melekat sangat kuat pada memori siswa Auditori."
+            },
+            {
+                category: "Hambatan Auditori 🎧",
+                question: "Faktor apakah yang paling cepat merusak konsentrasi belajar siswa bertipe Auditori?",
+                options: [
+                    "Suara bising, obrolan orang di sekitar, atau suara televisi yang keras",
+                    "Dinding kamar yang berwarna polos",
+                    "Meja belajar yang hanya berisi satu buku",
+                    "Lampu belajar yang terang"
+                ],
+                answer: 0,
+                explanation: "Karena sangat peka terhadap suara, kebisingan latar belakang sangat mudah mengganggu pemrosesan informasi siswa Auditori."
+            },
+            {
+                category: "Studi Kasus Auditori 🎧",
+                question: "Sari mudah paham saat guru menerangkan di kelas, tetapi sering lupa ketika membaca buku teks tebal di rumah. Strategi yang tepat untuk Sari adalah...",
+                options: [
+                    "Merekam ringkasan materi dengan suaranya sendiri lalu memutarnya kembali",
+                    "Menebalkan seluruh kalimat di buku dengan spidol hitam",
+                    "Belajar sambil menonton acara TV yang ramai",
+                    "Membuat maket bangunan dari karton"
+                ],
+                answer: 0,
+                explanation: "Merekam suara sendiri saat merangkum dan mendengarkannya kembali mengubah teks bacaan menjadi stimulus audio yang efektif."
+            },
+            {
+                category: "Strategi Auditori 🎧",
+                question: "Metode 'Tutor Sebaya' (menjelaskan kembali materi kepada teman) sangat efektif bagi pelajar Auditori karena...",
+                options: [
+                    "Mereka dapat mendengar suara mereka sendiri menyusun dan mengulang konsep",
+                    "Mereka bisa menggambar komik bersama teman",
+                    "Mereka tidak perlu memahami materi sama sekali",
+                    "Mereka bisa berolahraga sambil berdiskusi"
+                ],
+                answer: 0,
+                explanation: "Saat menjelaskan secara lisan kepada orang lain, siswa Auditori memperkuat pemahaman melalui pendengaran dan artikulasi verbal."
+            },
+            {
+                category: "Ciri-Ciri Auditori 🎧",
+                question: "Dalam mengingat informasi baru, siswa Auditori biasanya jauh lebih mudah mengingat...",
+                options: [
+                    "Nama seseorang yang baru dikenalkan secara lisan daripada wajahnya",
+                    "Bentuk wajah seseorang tetapi lupa namanya",
+                    "Warna baju yang dipakai guru minggu lalu",
+                    "Tata letak meja di perpustakaan"
+                ],
+                answer: 0,
+                explanation: "Pelajar Auditori unggul dalam memori verbal dan bunyi (seperti nama dan percakapan) dibandingkan detail rupa visual."
+            },
+            {
+                category: "Media Belajar Auditori 🎧",
+                question: "Ketika memanfaatkan smartphone untuk belajar Bahasa Inggris, media yang paling sesuai bagi siswa Auditori adalah...",
+                options: [
+                    "Aplikasi audiobook, podcast percakapan, dan fitur pengucapan (pronunciation)",
+                    "Wallpaper kutipan kata motivasi saja",
+                    "Galeri foto pemandangan",
+                    "Game balapan tanpa suara"
+                ],
+                answer: 0,
+                explanation: "Audiobook dan podcast melatih pelafalan, intonasi, dan pemahaman menyimak yang menjadi kekuatan utama siswa Auditori."
+            },
+            {
+                category: "Studi Kasus Auditori 🎧",
+                question: "Saat mengerjakan soal cerita Matematika yang panjang, siswa Auditori sebaiknya...",
+                options: [
+                    "Membaca soal secara perlahan sambil berbisik agar setiap angka terdengar jelas",
+                    "Langsung menebak jawaban tanpa membaca soal",
+                    "Menghitung sambil mendengarkan musik rock dengan volume maksimal",
+                    "Menggambar pemandangan di kertas buram"
+                ],
+                answer: 0,
+                explanation: "Membaca pelan dengan bisikan membantu siswa Auditori menangkap detail kata kunci soal cerita tanpa terlewat."
+            },
+            {
+                category: "Ciri-Ciri Auditori 🎧",
+                question: "Ketika sedang bosan atau menunggu di kelas, siswa Auditori sering mengekspresikan dirinya dengan cara...",
+                options: [
+                    "Bersenandung kecil, bersiul pelan, atau mengajak teman berdiskusi",
+                    "Menggambar coretan doodle yang rumit di buku",
+                    "Membongkar pulpen menjadi bagian-bagian kecil",
+                    "Menata ulang posisi alat tulis berdasarkan ukuran"
+                ],
+                answer: 0,
+                explanation: "Bersenandung dan berbicara merupakan saluran ekspresi alami bagi individu dengan kecenderungan Auditori."
+            },
+
+            // --- BAGIAN C: GAYA BELAJAR KINESTETIK & STUDI KASUS VAK (21 - 30) ---
+            {
+                category: "Tipe Kinestetik 🤸",
+                question: "Siswa dengan gaya belajar Kinestetik akan belajar paling optimal apabila mereka dilibatkan dalam...",
+                options: [
+                    "Praktik langsung, eksperimen laboratorium, simulasi, atau aktivitas fisik",
+                    "Mendengarkan ceramah selama 3 jam tanpa jeda",
+                    "Membaca buku teks tanpa ilustrasi maupun praktik",
+                    "Menonton video presentasi tanpa mencatat atau bergerak"
+                ],
+                answer: 0,
+                explanation: "Pelajar Kinestetik belajar melalui pengalaman langsung ('learning by doing'), sentuhan, dan gerakan tubuh."
+            },
+            {
+                category: "Ciri-Ciri Kinestetik 🤸",
+                question: "Manakah perilaku berikut yang merupakan ciri khas siswa dengan gaya belajar Kinestetik?",
+                options: [
+                    "Sulit duduk diam dalam waktu lama dan sering menggerakkan kaki atau tangan saat berpikir",
+                    "Sangat betah duduk kaku selama berjam-jam tanpa bergerak",
+                    "Selalu mencatat dengan tulisan kaligrafi yang sangat rapi",
+                    "Hanya mau belajar jika ada rekaman suara"
+                ],
+                answer: 0,
+                explanation: "Gerakan fisik membantu menjaga aliran fokus otak siswa Kinestetik; duduk diam terlalu lama justru membuat mereka cepat jenuh."
+            },
+            {
+                category: "Strategi Kinestetik 🤸",
+                question: "Rafi adalah siswa SMK jurusan Teknik Otomotif yang bertipe Kinestetik. Cara belajar paling efektif bagi Rafi adalah...",
+                options: [
+                    "Langsung mempraktikkan pembongkaran dan perakitan komponen di bengkel dengan panduan K3",
+                    "Hanya menghafal nama-nama kunci pas dari buku paket",
+                    "Mendengarkan rekaman suara mesin tanpa menyentuh alat",
+                    "Mewarnai gambar mobil di buku gambar"
+                ],
+                answer: 0,
+                explanation: "Praktik langsung menggunakan alat peraga/komponen nyata membuat memori otot dan pemahaman konsep siswa Kinestetik bekerja maksimal."
+            },
+            {
+                category: "Strategi Kinestetik 🤸",
+                question: "Saat harus menghafal materi pelajaran yang banyak di rumah, siswa Kinestetik disarankan untuk...",
+                options: [
+                    "Berjalan mondar-mandir pelan di kamar sambil memegang kartu catatan",
+                    "Berbaring diam di kasur sambil menatap langit-langit",
+                    "Duduk bersila tanpa bergerak sedikit pun selama 2 jam",
+                    "Hanya mendengarkan teman membaca"
+                ],
+                answer: 0,
+                explanation: "Aktivitas berjalan ringan sambil membaca kartu catatan menyalurkan energi gerak siswa Kinestetik sehingga otak lebih fokus."
+            },
+            {
+                category: "Studi Kasus Kinestetik 🤸",
+                question: "Dalam pelajaran PPKn atau Bimbingan Konseling tentang cara mengatasi perundungan (bullying), metode belajar terbaik bagi siswa Kinestetik adalah...",
+                options: [
+                    "Bermain peran (roleplay) atau simulasi kasus secara langsung di depan kelas",
+                    "Menyalin pasal-pasal undang-undang sebanyak 10 halaman",
+                    "Mendengarkan pidato tanpa tanya jawab",
+                    "Membaca brosur dalam diam"
+                ],
+                answer: 0,
+                explanation: "Roleplay melibatkan gerakan, ekspresi, dan pengalaman nyata yang sangat bermakna bagi pembelajar Kinestetik."
+            },
+            {
+                category: "Manajemen Waktu Kinestetik 🤸",
+                question: "Agar tidak cepat gelisah saat belajar mandiri, teknik pengaturan waktu yang sangat cocok bagi siswa Kinestetik adalah...",
+                options: [
+                    "Teknik Pomodoro (25 menit fokus belajar, lalu 5 menit istirahat peregangan fisik)",
+                    "Belajar 4 jam nonstop tanpa berdiri dari kursi",
+                    "Belajar hanya 2 menit lalu bermain game 2 jam",
+                    "Menunda belajar sampai tengah malam"
+                ],
+                answer: 0,
+                explanation: "Jeda singkat setiap 25 menit memberi kesempatan siswa Kinestetik untuk melakukan peregangan (stretching) sehingga fokus kembali segar."
+            },
+            {
+                category: "Ciri-Ciri Kinestetik 🤸",
+                question: "Ketika membaca buku pelajaran, siswa Kinestetik sering kali melakukan kebiasaan...",
+                options: [
+                    "Menunjuk baris kalimat menggunakan jari telunjuk atau pulpen",
+                    "Memperhatikan jenis font huruf saja",
+                    "Membaca dengan intonasi seperti penyiar berita",
+                    "Menghitung jumlah gambar di setiap bab"
+                ],
+                answer: 0,
+                explanation: "Menggunakan jari sebagai penunjuk bacaan membantu koordinasi mata dan gerak tangan pelajar Kinestetik."
+            },
+            {
+                category: "Integrasi VAK (Multimodal) 🌟",
+                question: "Mengapa seorang siswa SMP/SMK sangat dianjurkan memahami gaya belajar VAK (Visual, Auditori, Kinestetik) miliknya?",
+                options: [
+                    "Agar dapat memilih strategi belajar yang efektif, hemat waktu, dan meningkatkan prestasi",
+                    "Agar bisa menolak tugas guru yang tidak sesuai keinginannya",
+                    "Karena manusia hanya boleh memakai satu indra saja seumur hidup",
+                    "Supaya tidak perlu belajar lagi menjelang ujian"
+                ],
+                answer: 0,
+                explanation: "Mengetahui gaya belajar membantu siswa menyesuaikan cara mencatat, mengulang materi, dan mengatasi hambatan belajar secara mandiri."
+            },
+            {
+                category: "Studi Kasus VAK 🌟",
+                question: "Kelompok Projek IPAS terdiri dari Andi (Visual), Bella (Auditori), dan Cakra (Kinestetik). Pembagian tugas proyek pembuatan filter air sederhana yang paling tepat adalah...",
+                options: [
+                    "Andi membuat poster skema alat, Bella mempresentasikan hasil, Cakra merakit alat filter",
+                    "Semua hanya membaca buku tanpa membuat alat",
+                    "Cakra membuat poster diam-diam, Andi merakit alat tanpa gambar",
+                    "Bella merakit alat dalam diam tanpa berbicara"
+                ],
+                answer: 0,
+                explanation: "Kolaborasi berbasis kekuatan VAK membuat setiap anggota kelompok bekerja sesuai potensi terbaiknya dan menghasilkan karya optimal."
+            },
+            {
+                category: "Refleksi Gaya Belajar 🌟",
+                question: "Jika kamu menemukan materi pelajaran yang sulit dipahami hanya dengan satu cara, langkah 'Multimodal Learning' terbaik yang bisa dilakukan adalah...",
+                options: [
+                    "Menggabungkan ketiganya: melihat diagram (Visual), menjelaskan ulang (Auditori), dan latihan soal/praktik (Kinestetik)",
+                    "Menyerah dan menutup buku pelajaran",
+                    "Menunggu jawaban dari teman saat ulangan",
+                    "Hanya membaca judul bab berulang-ulang"
+                ],
+                answer: 0,
+                explanation: "Mengombinasikan Visual, Auditori, dan Kinestetik (Multimodal) mengaktifkan lebih banyak jalur saraf otak sehingga ingatan jauh lebih kuat!"
+            }
+        ];
+
+        /**
+         * =================================================================
+         * 3. GAME CONFIGURATION & BOARD DEFINITION (5x5 ZIG-ZAG)
+         * =================================================================
+         */
+        const BOARD_SIZE = 5;
+        const TOTAL_TILES = 25;
+        const STORAGE_KEY = 'petualangan_vak_leaderboard_v1';
+
+        // Special Tiles Map:
+        // 'ladder': climb up (Effective Study Habit)
+        // 'snake': slide down (Study Distraction / Obstacle)
+        // 'bonus': star quiz for +2 extra steps
+        const SPECIAL_TILES = {
+            3:  { type: 'ladder', target: 13, label: 'Mind Map', icon: '🪜', story: 'Kebiasaan Efektif: Membuat Mind Map warna-warni! Jawab benar untuk naik ke Kotak 13!' },
+            7:  { type: 'ladder', target: 17, label: 'Rekam Suara', icon: '🪜', story: 'Kebiasaan Efektif: Merekam ringkasan suara! Jawab benar untuk naik ke Kotak 17!' },
+            11: { type: 'ladder', target: 21, label: 'Praktik Lab', icon: '🪜', story: 'Kebiasaan Efektif: Praktik langsung & simulasi! Jawab benar untuk naik ke Kotak 21!' },
+            15: { type: 'ladder', target: 23, label: 'Tutor Sebaya', icon: '🪜', story: 'Kebiasaan Efektif: Berdiskusi & mengajar teman! Jawab benar untuk naik ke Kotak 23!' },
+
+            12: { type: 'snake',  target: 4,  label: 'Cek Medsos', icon: '🐍', story: 'Hambatan Belajar: Tergoda notifikasi media sosial! Jawab benar untuk bertahan, atau tergelincir turun ke Kotak 4!' },
+            19: { type: 'snake',  target: 8,  label: 'Kebut Semalam', icon: '🐍', story: 'Hambatan Belajar: Sistem Kebut Semalam (SKS)! Jawab benar untuk bertahan, atau tergelincir turun ke Kotak 8!' },
+            24: { type: 'snake',  target: 14, label: 'Tunda Tugas', icon: '🐍', story: 'Hambatan Belajar: Menunda-nunda tugas (Prokrastinasi)! Jawab benar untuk bertahan, atau tergelincir turun ke Kotak 14!' },
+
+            5:  { type: 'bonus',  bonusSteps: 2, label: 'Kuis +2', icon: '⭐', story: 'Kotak Bintang VAK! Jawab pertanyaan dengan benar untuk mendapat bonus maju +2 langkah!' },
+            9:  { type: 'bonus',  bonusSteps: 2, label: 'Kuis +2', icon: '⭐', story: 'Kotak Bintang VAK! Jawab pertanyaan dengan benar untuk mendapat bonus maju +2 langkah!' },
+            16: { type: 'bonus',  bonusSteps: 2, label: 'Kuis +2', icon: '⭐', story: 'Kotak Bintang VAK! Jawab pertanyaan dengan benar untuk mendapat bonus maju +2 langkah!' },
+            20: { type: 'bonus',  bonusSteps: 2, label: 'Kuis +2', icon: '⭐', story: 'Kotak Bintang VAK! Jawab pertanyaan dengan benar untuk mendapat bonus maju +2 langkah!' }
+        };
+
+        // Pastel color palette for 5x5 grid cells
+        const CELL_COLORS = [
+            'bg-indigo-50 border-2 border-indigo-200',
+            'bg-amber-50 border-2 border-amber-200',
+            'bg-sky-50 border-2 border-sky-200',
+            'bg-rose-50 border-2 border-rose-200',
+            'bg-emerald-50 border-2 border-emerald-200'
+        ];
+
+        /**
+         * =================================================================
+         * 4. MAIN GAME APPLICATION CONTROLLER
+         * =================================================================
+         */
+        const App = {
+            state: {
+                players: [
+                    { id: 1, name: 'Pemain 1', color: 'rose', pos: 1, rolls: 0, correct: 0, totalQuiz: 0 },
+                    { id: 2, name: 'Pemain 2', color: 'blue', pos: 1, rolls: 0, correct: 0, totalQuiz: 0 }
+                ],
+                teamName: 'Kelas & Sekolah',
+                currentTurn: 0, // 0 = Player 1, 1 = Player 2
+                isBusy: false,
+                questionDeck: [],
+                activeQuiz: null,
+                activeTileInfo: null,
+                lastQuizWasCorrect: false,
+                previousScreen: 'screen-start',
+                confirmCallback: null
+            },
+
+            // Initialize app on load
+            init() {
+                this.seedInitialLeaderboard();
+                this.renderDiceFace(6);
+                this.buildBoardGrid();
+                this.drawSnakesAndLaddersSVG();
+                this.updateTokenPositions(false);
+                window.addEventListener('resize', () => this.updateTokenPositions(false));
+            },
+
+            // Convert tile number (1..25) to zig-zag grid { row (0..4 top-down), col (0..4 left-right) }
+            getTileCoords(tileNum) {
+                const clamped = Math.max(1, Math.min(TOTAL_TILES, tileNum));
+                const zeroIdx = clamped - 1;
+                const rowFromBottom = Math.floor(zeroIdx / BOARD_SIZE); // 0 is bottom, 4 is top
+                const visualRow = (BOARD_SIZE - 1) - rowFromBottom;
+                const posInRow = zeroIdx % BOARD_SIZE;
+
+                // Zig-zag: even rowFromBottom (0, 2, 4) goes left-to-right; odd (1, 3) goes right-to-left
+                const visualCol = (rowFromBottom % 2 === 0)
+                    ? posInRow
+                    : (BOARD_SIZE - 1) - posInRow;
+
+                return { row: visualRow, col: visualCol };
+            },
+
+            // Build 5x5 HTML Grid cells in top-to-bottom visual order
+            buildBoardGrid() {
+                const grid = document.getElementById('board-grid');
+                grid.innerHTML = '';
+
+                // Map visual (row, col) -> tileNum
+                const matrix = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
+                for (let n = 1; n <= TOTAL_TILES; n++) {
+                    const { row, col } = this.getTileCoords(n);
+                    matrix[row][col] = n;
+                }
+
+                for (let r = 0; r < BOARD_SIZE; r++) {
+                    for (let c = 0; c < BOARD_SIZE; c++) {
+                        const num = matrix[r][c];
+                        const special = SPECIAL_TILES[num];
+                        const cell = document.createElement('div');
+
+                        let colorClass = CELL_COLORS[(num + r) % CELL_COLORS.length];
+                        if (num === 1) colorClass = 'bg-gradient-to-br from-emerald-200 to-teal-200 border-2 border-emerald-400';
+                        if (num === 25) colorClass = 'bg-gradient-to-br from-amber-200 via-yellow-200 to-orange-200 border-2 border-amber-500';
+                        if (special?.type === 'ladder') colorClass = 'bg-emerald-100/90 border-2 border-emerald-400';
+                        if (special?.type === 'snake') colorClass = 'bg-rose-100/90 border-2 border-rose-400';
+                        if (special?.type === 'bonus') colorClass = 'bg-amber-100/90 border-2 border-amber-400';
+
+                        cell.className = `board-cell ${colorClass}`;
+                        cell.id = `cell-${num}`;
+
+                        // Top row inside cell: Tile Number + Special Star Badge
+                        const topBar = document.createElement('div');
+                        topBar.className = 'flex items-center justify-between w-full z-10';
+                        topBar.innerHTML = `
+                            <span class="text-xs sm:text-sm font-extrabold ${num === 25 ? 'text-amber-900' : 'text-slate-700'}">${num}</span>
+                            ${special ? `<span class="text-xs sm:text-sm drop-shadow-sm" title="Kotak Spesial">⭐</span>` : ''}
+                        `;
+
+                        // Bottom label inside cell
+                        const bottomBar = document.createElement('div');
+                        bottomBar.className = 'w-full text-center z-10 leading-none';
+                        if (num === 1) {
+                            bottomBar.innerHTML = `<span class="text-[9px] sm:text-[10px] font-extrabold bg-emerald-600 text-white px-1.5 py-0.5 rounded-md">START</span>`;
+                        } else if (num === 25) {
+                            bottomBar.innerHTML = `<span class="text-[9px] sm:text-[10px] font-extrabold bg-amber-600 text-white px-1.5 py-0.5 rounded-md">🏆 FINISH</span>`;
+                        } else if (special) {
+                            const badgeColor = special.type === 'ladder'
+                                ? 'bg-emerald-600/90 text-white'
+                                : special.type === 'snake'
+                                    ? 'bg-rose-600/90 text-white'
+                                    : 'bg-amber-500/95 text-slate-950';
+                            const routeText = special.type === 'bonus'
+                                ? '+2 Maju'
+                                : `${num}→${special.target}`;
+                            bottomBar.innerHTML = `<span class="inline-block text-[8px] sm:text-[9px] font-bold ${badgeColor} px-1 py-0.5 rounded">${routeText}</span>`;
+                        }
+
+                        cell.appendChild(topBar);
+                        cell.appendChild(bottomBar);
+                        grid.appendChild(cell);
+                    }
+                }
+            },
+
+            // Draw crisp SVG Ladders (Green/Gold) & Snakes (Purple/Red) connecting tile centers
+            drawSnakesAndLaddersSVG() {
+                const svg = document.getElementById('board-svg');
+                svg.innerHTML = '';
+
+                const getCenterSVG = (tileNum) => {
+                    const { row, col } = this.getTileCoords(tileNum);
+                    // Each cell in 500x500 viewBox is 100x100
+                    return {
+                        x: col * 100 + 50,
+                        y: row * 100 + 50
+                    };
+                };
+
+                Object.entries(SPECIAL_TILES).forEach(([startStr, info]) => {
+                    const startNum = parseInt(startStr, 10);
+                    if (info.type === 'ladder') {
+                        const p1 = getCenterSVG(startNum);
+                        const p2 = getCenterSVG(info.target);
+                        this.renderSVGLadder(svg, p1, p2);
+                    } else if (info.type === 'snake') {
+                        const p1 = getCenterSVG(startNum);
+                        const p2 = getCenterSVG(info.target);
+                        this.renderSVGSnake(svg, p1, p2);
+                    }
+                });
+            },
+
+            renderSVGLadder(svg, p1, p2) {
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const len = Math.hypot(dx, dy);
+                if (len === 0) return;
+
+                // Perpendicular offset for two ladder rails
+                const nx = (-dy / len) * 11;
+                const ny = (dx / len) * 11;
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('opacity', '0.82');
+
+                // Left and right rails
+                const rail1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                rail1.setAttribute('x1', p1.x + nx);
+                rail1.setAttribute('y1', p1.y + ny);
+                rail1.setAttribute('x2', p2.x + nx);
+                rail1.setAttribute('y2', p2.y + ny);
+                rail1.setAttribute('stroke', '#059669');
+                rail1.setAttribute('stroke-width', '5');
+                rail1.setAttribute('stroke-linecap', 'round');
+
+                const rail2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                rail2.setAttribute('x1', p1.x - nx);
+                rail2.setAttribute('y1', p1.y - ny);
+                rail2.setAttribute('x2', p2.x - nx);
+                rail2.setAttribute('y2', p2.y - ny);
+                rail2.setAttribute('stroke', '#059669');
+                rail2.setAttribute('stroke-width', '5');
+                rail2.setAttribute('stroke-linecap', 'round');
+
+                g.appendChild(rail1);
+                g.appendChild(rail2);
+
+                // Rungs along the ladder
+                const steps = Math.max(4, Math.floor(len / 28));
+                for (let i = 1; i < steps; i++) {
+                    const t = i / steps;
+                    const rx = p1.x + dx * t;
+                    const ry = p1.y + dy * t;
+                    const rung = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    rung.setAttribute('x1', rx + nx);
+                    rung.setAttribute('y1', ry + ny);
+                    rung.setAttribute('x2', rx - nx);
+                    rung.setAttribute('y2', ry - ny);
+                    rung.setAttribute('stroke', '#10b981');
+                    rung.setAttribute('stroke-width', '4');
+                    rung.setAttribute('stroke-linecap', 'round');
+                    g.appendChild(rung);
+                }
+
+                svg.appendChild(g);
+            },
+
+            renderSVGSnake(svg, p1, p2) {
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+
+                // Control points for S-curve snake body
+                const perpX = -dy * 0.25;
+                const perpY = dx * 0.25;
+
+                const c1x = (p1.x + midX) / 2 + perpX;
+                const c1y = (p1.y + midY) / 2 + perpY;
+                const c2x = (midX + p2.x) / 2 - perpX;
+                const c2y = (midY + p2.y) / 2 - perpY;
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('opacity', '0.84');
+
+                const pathData = `M ${p1.x} ${p1.y} Q ${c1x} ${c1y}, ${midX} ${midY} T ${p2.x} ${p2.y}`;
+
+                // Outer snake outline
+                const bodyOutline = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                bodyOutline.setAttribute('d', pathData);
+                bodyOutline.setAttribute('fill', 'none');
+                bodyOutline.setAttribute('stroke', '#be123c');
+                bodyOutline.setAttribute('stroke-width', '12');
+                bodyOutline.setAttribute('stroke-linecap', 'round');
+
+                // Inner snake stripe pattern
+                const bodyStripe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                bodyStripe.setAttribute('d', pathData);
+                bodyStripe.setAttribute('fill', 'none');
+                bodyStripe.setAttribute('stroke', '#fda4af');
+                bodyStripe.setAttribute('stroke-width', '5');
+                bodyStripe.setAttribute('stroke-dasharray', '10 10');
+                bodyStripe.setAttribute('stroke-linecap', 'round');
+
+                // Snake head at start tile (p1)
+                const head = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                head.setAttribute('cx', p1.x);
+                head.setAttribute('cy', p1.y);
+                head.setAttribute('r', '10');
+                head.setAttribute('fill', '#e11d48');
+                head.setAttribute('stroke', '#ffffff');
+                head.setAttribute('stroke-width', '2');
+
+                const eye1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                eye1.setAttribute('cx', p1.x - 3);
+                eye1.setAttribute('cy', p1.y - 2);
+                eye1.setAttribute('r', '2');
+                eye1.setAttribute('fill', '#ffffff');
+
+                const eye2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                eye2.setAttribute('cx', p1.x + 3);
+                eye2.setAttribute('cy', p1.y - 2);
+                eye2.setAttribute('r', '2');
+                eye2.setAttribute('fill', '#ffffff');
+
+                g.appendChild(bodyOutline);
+                g.appendChild(bodyStripe);
+                g.appendChild(head);
+                g.appendChild(eye1);
+                g.appendChild(eye2);
+                svg.appendChild(g);
+            },
+
+            // Update visual coordinates of Player 1 & Player 2 tokens on the 5x5 board
+            updateTokenPositions(animateHop = true) {
+                const p1 = this.state.players[0];
+                const p2 = this.state.players[1];
+                const sameTile = p1.pos === p2.pos;
+
+                [p1, p2].forEach((player, idx) => {
+                    const tokenEl = document.getElementById(`token-p${player.id}`);
+                    if (!tokenEl) return;
+
+                    const { row, col } = this.getTileCoords(player.pos);
+                    // Percentage center of cell inside the 5x5 board
+                    let leftPct = (col * 20) + 4.5;
+                    let topPct = (row * 20) + 4.5;
+
+                    // Slight horizontal offset if both players stand on the exact same tile
+                    if (sameTile) {
+                        leftPct += (idx === 0 ? -2.8 : 2.8);
+                        topPct += (idx === 0 ? -1.2 : 1.5);
+                    }
+
+                    tokenEl.style.left = `${leftPct}%`;
+                    tokenEl.style.top = `${topPct}%`;
+
+                    if (animateHop) {
+                        tokenEl.classList.add('token-hop');
+                        setTimeout(() => tokenEl.classList.remove('token-hop'), 220);
+                    }
+                });
+            },
+
+            // Render standard 1-6 dice pips
+            renderDiceFace(value) {
+                const face = document.getElementById('dice-face');
+                face.innerHTML = '';
+
+                // 3x3 grid positions (0..8) active per dice face
+                const pipMap = {
+                    1: [4],
+                    2: [2, 6],
+                    3: [2, 4, 6],
+                    4: [0, 2, 6, 8],
+                    5: [0, 2, 4, 6, 8],
+                    6: [0, 2, 3, 5, 6, 8]
+                };
+
+                const active = pipMap[value] || [4];
+                for (let i = 0; i < 9; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'flex items-center justify-center';
+                    if (active.includes(i)) {
+                        const pip = document.createElement('div');
+                        pip.className = 'dice-pip';
+                        slot.appendChild(pip);
+                    }
+                    face.appendChild(slot);
+                }
+            },
+
+            // Switch visible screen
+            switchScreen(screenId) {
+                ['screen-start', 'screen-game', 'screen-gameover', 'screen-leaderboard'].forEach(id => {
+                    document.getElementById(id).classList.add('hidden');
+                });
+                document.getElementById(screenId).classList.remove('hidden');
+
+                const navHome = document.getElementById('btn-nav-home');
+                if (screenId === 'screen-start') {
+                    navHome.classList.add('hidden');
+                } else {
+                    navHome.classList.remove('hidden');
+                }
+            },
+
+            // Start new game from Start Screen form
+            startGame(event) {
+                event.preventDefault();
+                SoundEngine.init();
+                SoundEngine.playCorrect();
+
+                const p1Name = document.getElementById('input-p1').value.trim() || 'Pemain 1';
+                const p2Name = document.getElementById('input-p2').value.trim() || 'Pemain 2';
+                const teamName = document.getElementById('input-team').value.trim() || 'Tim Belajar Hebat';
+
+                this.state.players = [
+                    { id: 1, name: p1Name, color: 'rose', pos: 1, rolls: 0, correct: 0, totalQuiz: 0 },
+                    { id: 2, name: p2Name, color: 'blue', pos: 1, rolls: 0, correct: 0, totalQuiz: 0 }
+                ];
+                this.state.teamName = teamName;
+                this.state.currentTurn = 0;
+                this.state.isBusy = false;
+                this.shuffleQuestions();
+
+                document.getElementById('display-team').textContent = teamName;
+                document.getElementById('display-p1-name').textContent = p1Name;
+                document.getElementById('display-p2-name').textContent = p2Name;
+
+                this.switchScreen('screen-game');
+                this.updateHUD();
+                this.updateTokenPositions(false);
+                this.setStatusBanner(`Giliran <span class="text-rose-600 font-bold">${this.escapeHTML(p1Name)}</span> mengocok dadu!`);
+            },
+
+            restartSamePlayers() {
+                SoundEngine.playCorrect();
+                this.state.players.forEach(p => {
+                    p.pos = 1;
+                    p.rolls = 0;
+                    p.correct = 0;
+                    p.totalQuiz = 0;
+                });
+                this.state.currentTurn = 0;
+                this.state.isBusy = false;
+                this.shuffleQuestions();
+
+                this.switchScreen('screen-game');
+                this.updateHUD();
+                this.updateTokenPositions(false);
+                this.setStatusBanner(`Permainan baru! Giliran <span class="text-rose-600 font-bold">${this.escapeHTML(this.state.players[0].name)}</span> mengocok dadu!`);
+            },
+
+            // Shuffle 30 questions into a non-repeating deck
+            shuffleQuestions() {
+                const copy = [...QUESTION_BANK];
+                for (let i = copy.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [copy[i], copy[j]] = [copy[j], copy[i]];
+                }
+                this.state.questionDeck = copy;
+            },
+
+            drawNextQuestion() {
+                if (this.state.questionDeck.length === 0) {
+                    this.shuffleQuestions();
+                }
+                return this.state.questionDeck.pop();
+            },
+
+            // Update Player Cards, Turn Highlight, and Dice Controls
+            updateHUD() {
+                const p1 = this.state.players[0];
+                const p2 = this.state.players[1];
+
+                document.getElementById('display-p1-pos').textContent = p1.pos;
+                document.getElementById('display-p1-rolls').textContent = p1.rolls;
+                document.getElementById('display-p1-correct').textContent = p1.correct;
+
+                document.getElementById('display-p2-pos').textContent = p2.pos;
+                document.getElementById('display-p2-rolls').textContent = p2.rolls;
+                document.getElementById('display-p2-correct').textContent = p2.correct;
+
+                const cardP1 = document.getElementById('card-p1');
+                const cardP2 = document.getElementById('card-p2');
+                const badgeP1 = document.getElementById('badge-turn-p1');
+                const badgeP2 = document.getElementById('badge-turn-p2');
+
+                if (this.state.currentTurn === 0) {
+                    cardP1.className = 'bg-white rounded-2xl p-3.5 border-4 border-rose-500 shadow-md transition-all duration-300 relative';
+                    cardP2.className = 'bg-white/80 rounded-2xl p-3.5 border-2 border-slate-200 shadow-sm transition-all duration-300 relative opacity-75';
+                    badgeP1.classList.remove('hidden');
+                    badgeP2.classList.add('hidden');
+                } else {
+                    cardP2.className = 'bg-white rounded-2xl p-3.5 border-4 border-blue-500 shadow-md transition-all duration-300 relative';
+                    cardP1.className = 'bg-white/80 rounded-2xl p-3.5 border-2 border-slate-200 shadow-sm transition-all duration-300 relative opacity-75';
+                    badgeP2.classList.remove('hidden');
+                    badgeP1.classList.add('hidden');
+                }
+
+                const rollBtn = document.getElementById('btn-roll-dice');
+                rollBtn.disabled = this.state.isBusy;
+            },
+
+            setStatusBanner(htmlText) {
+                document.getElementById('status-text').innerHTML = htmlText;
+            },
+
+            // Roll Dice & Animate Token Step-by-Step
+            async rollDice() {
+                if (this.state.isBusy) return;
+                this.state.isBusy = true;
+                this.updateHUD();
+
+                const activePlayer = this.state.players[this.state.currentTurn];
+                const colorText = activePlayer.id === 1 ? 'text-rose-600' : 'text-blue-600';
+
+                SoundEngine.playDiceRoll();
+                const diceBox = document.getElementById('dice-box');
+                const diceLabel = document.getElementById('dice-result-label');
+                diceBox.classList.add('dice-rolling');
+                diceLabel.textContent = 'Mengocok...';
+
+                // Visual dice tumble animation
+                let finalRoll = 1;
+                for (let i = 0; i < 8; i++) {
+                    finalRoll = Math.floor(Math.random() * 6) + 1;
+                    this.renderDiceFace(finalRoll);
+                    await this.sleep(65);
+                }
+
+                diceBox.classList.remove('dice-rolling');
+                activePlayer.rolls += 1;
+                diceLabel.textContent = `Angka ${finalRoll}!`;
+                this.updateHUD();
+
+                this.setStatusBanner(`<span class="${colorText} font-bold">${this.escapeHTML(activePlayer.name)}</span> mendapat dadu <strong>${finalRoll}</strong>!`);
+
+                // Move step-by-step (with bounce-back if exceeding 25)
+                await this.movePlayerSteps(activePlayer, finalRoll);
+
+                // Check Win Condition
+                if (activePlayer.pos === TOTAL_TILES) {
+                    await this.sleep(350);
+                    this.handleVictory(activePlayer);
+                    return;
+                }
+
+                // Check if landed on a Special Tile (⭐)
+                const special = SPECIAL_TILES[activePlayer.pos];
+                if (special) {
+                    await this.sleep(300);
+                    this.openQuizModal(activePlayer, special);
+                } else {
+                    await this.sleep(350);
+                    this.endTurn();
+                }
+            },
+
+            // Move player one tile at a time with bounce-back at tile 25
+            async movePlayerSteps(player, steps) {
+                let direction = 1;
+                for (let s = 1; s <= steps; s++) {
+                    if (player.pos === TOTAL_TILES && direction === 1) {
+                        direction = -1; // Bounce back if rolling over 25
+                    }
+                    player.pos += direction;
+                    SoundEngine.playStep(s);
+                    this.updateTokenPositions(true);
+                    this.updateHUD();
+                    await this.sleep(300);
+                }
+            },
+
+            // Open Interactive Quiz Modal when landing on ⭐
+            openQuizModal(player, specialInfo) {
+                const questionObj = this.drawNextQuestion();
+                this.state.activeQuiz = questionObj;
+                this.state.activeTileInfo = specialInfo;
+                this.state.lastQuizWasCorrect = false;
+
+                const typeBadge = document.getElementById('quiz-type-badge');
+                const catBadge = document.getElementById('quiz-category-badge');
+                const eventBanner = document.getElementById('quiz-event-banner');
+                const qText = document.getElementById('quiz-question');
+                const optionsContainer = document.getElementById('quiz-options');
+                const feedbackBox = document.getElementById('quiz-feedback');
+
+                feedbackBox.classList.add('hidden');
+                catBadge.textContent = questionObj.category;
+                qText.textContent = questionObj.question;
+
+                if (specialInfo.type === 'ladder') {
+                    typeBadge.textContent = `⭐ Tangga (${player.pos} → ${specialInfo.target})`;
+                    typeBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+                    eventBanner.className = 'mb-4 p-3 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-xs sm:text-sm text-emerald-900 font-semibold';
+                    eventBanner.textContent = `${specialInfo.icon} ${specialInfo.story}`;
+                } else if (specialInfo.type === 'snake') {
+                    typeBadge.textContent = `⭐ Ular (${player.pos} → ${specialInfo.target})`;
+                    typeBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300';
+                    eventBanner.className = 'mb-4 p-3 rounded-2xl bg-rose-50 border-2 border-rose-200 text-xs sm:text-sm text-rose-900 font-semibold';
+                    eventBanner.textContent = `${specialInfo.icon} ${specialInfo.story}`;
+                } else {
+                    typeBadge.textContent = `⭐ Bintang Bonus (+${specialInfo.bonusSteps})`;
+                    typeBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300';
+                    eventBanner.className = 'mb-4 p-3 rounded-2xl bg-amber-50 border-2 border-amber-200 text-xs sm:text-sm text-amber-900 font-semibold';
+                    eventBanner.textContent = `${specialInfo.icon} ${specialInfo.story}`;
+                }
+
+                // Render 4 options
+                optionsContainer.innerHTML = '';
+                const letters = ['A', 'B', 'C', 'D'];
+                questionObj.options.forEach((optText, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'quiz-opt-btn w-full text-left p-3.5 rounded-2xl border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/70 transition flex items-start gap-3 font-medium text-xs sm:text-sm text-slate-800';
+                    btn.innerHTML = `
+                        <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center shrink-0 text-xs">${letters[idx]}</span>
+                        <span class="leading-snug pt-0.5">${this.escapeHTML(optText)}</span>
+                    `;
+                    btn.onclick = () => this.submitQuizAnswer(idx);
+                    optionsContainer.appendChild(btn);
+                });
+
+                document.getElementById('modal-quiz').classList.remove('hidden');
+            },
+
+            // Evaluate player's multiple-choice answer
+            submitQuizAnswer(selectedIndex) {
+                const q = this.state.activeQuiz;
+                const info = this.state.activeTileInfo;
+                const player = this.state.players[this.state.currentTurn];
+                if (!q || !info) return;
+
+                const isCorrect = selectedIndex === q.answer;
+                this.state.lastQuizWasCorrect = isCorrect;
+                player.totalQuiz += 1;
+                if (isCorrect) {
+                    player.correct += 1;
+                    SoundEngine.playCorrect();
+                } else {
+                    SoundEngine.playWrong();
+                }
+                this.updateHUD();
+
+                // Highlight option buttons & disable further clicks
+                const buttons = document.querySelectorAll('.quiz-opt-btn');
+                buttons.forEach((btn, idx) => {
+                    btn.disabled = true;
+                    btn.classList.remove('hover:border-indigo-400', 'hover:bg-indigo-50/70');
+                    if (idx === q.answer) {
+                        btn.className = 'quiz-opt-btn w-full text-left p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50 flex items-start gap-3 font-bold text-xs sm:text-sm text-emerald-900';
+                    } else if (idx === selectedIndex && !isCorrect) {
+                        btn.className = 'quiz-opt-btn w-full text-left p-3.5 rounded-2xl border-2 border-rose-500 bg-rose-50 flex items-start gap-3 font-medium text-xs sm:text-sm text-rose-900';
+                    } else {
+                        btn.classList.add('opacity-55');
+                    }
+                });
+
+                // Show feedback & consequence summary
+                const feedbackBox = document.getElementById('quiz-feedback');
+                const feedbackTitle = document.getElementById('quiz-feedback-title');
+                const feedbackDesc = document.getElementById('quiz-feedback-desc');
+
+                let outcomeMessage = '';
+                if (info.type === 'ladder') {
+                    outcomeMessage = isCorrect
+                        ? `Hebat! Kamu berhasil naik tangga ke Kotak ${info.target}!`
+                        : `Belum tepat! Kamu tetap bertahan di Kotak ${player.pos} (gagal naik tangga).`;
+                } else if (info.type === 'snake') {
+                    outcomeMessage = isCorrect
+                        ? `Luar biasa! Kamu berhasil melawan distraksi dan tetap aman di Kotak ${player.pos}!`
+                        : `Ups! Terkena hambatan belajar, pionmu turun ular ke Kotak ${info.target}!`;
+                } else {
+                    outcomeMessage = isCorrect
+                        ? `Mantap! Kamu mendapat bonus maju +${info.bonusSteps} langkah!`
+                        : `Jawaban belum tepat. Kamu tetap berada di Kotak ${player.pos}.`;
+                }
+
+                if (isCorrect) {
+                    feedbackBox.className = 'mt-4 p-3.5 rounded-2xl border-2 border-emerald-300 bg-emerald-50 text-emerald-950 text-xs sm:text-sm';
+                    feedbackTitle.textContent = `✅ Benar! ${outcomeMessage}`;
+                } else {
+                    feedbackBox.className = 'mt-4 p-3.5 rounded-2xl border-2 border-rose-300 bg-rose-50 text-rose-950 text-xs sm:text-sm';
+                    feedbackTitle.textContent = `❌ Kurang Tepat! ${outcomeMessage}`;
+                }
+
+                feedbackDesc.textContent = `Pembahasan: ${q.explanation}`;
+                feedbackBox.classList.remove('hidden');
+            },
+
+            // Apply Ladder / Snake / Bonus movement after closing Quiz Modal
+            async resolveQuizOutcome() {
+                document.getElementById('modal-quiz').classList.add('hidden');
+                const player = this.state.players[this.state.currentTurn];
+                const info = this.state.activeTileInfo;
+                const isCorrect = this.state.lastQuizWasCorrect;
+                const colorText = player.id === 1 ? 'text-rose-600' : 'text-blue-600';
+
+                if (info.type === 'ladder' && isCorrect) {
+                    this.setStatusBanner(`🪜 <span class="${colorText} font-bold">${this.escapeHTML(player.name)}</span> naik tangga menuju <strong>Kotak ${info.target}</strong>!`);
+                    await this.sleep(250);
+                    player.pos = info.target;
+                    SoundEngine.playStep(4);
+                    this.updateTokenPositions(true);
+                    this.updateHUD();
+                } else if (info.type === 'snake' && !isCorrect) {
+                    this.setStatusBanner(`🐍 <span class="${colorText} font-bold">${this.escapeHTML(player.name)}</span> tergelincir ular turun ke <strong>Kotak ${info.target}</strong>!`);
+                    await this.sleep(250);
+                    player.pos = info.target;
+                    SoundEngine.playStep(1);
+                    this.updateTokenPositions(true);
+                    this.updateHUD();
+                } else if (info.type === 'bonus' && isCorrect) {
+                    this.setStatusBanner(`⭐ <span class="${colorText} font-bold">${this.escapeHTML(player.name)}</span> mendapat bonus <strong>+${info.bonusSteps} langkah</strong>!`);
+                    await this.movePlayerSteps(player, info.bonusSteps);
+                }
+
+                // Check if bonus/ladder pushed player to finish (25)
+                if (player.pos === TOTAL_TILES) {
+                    await this.sleep(350);
+                    this.handleVictory(player);
+                    return;
+                }
+
+                await this.sleep(350);
+                this.endTurn();
+            },
+
+            // Switch turn to the next player
+            endTurn() {
+                this.state.currentTurn = this.state.currentTurn === 0 ? 1 : 0;
+                this.state.isBusy = false;
+                this.updateHUD();
+
+                const nextPlayer = this.state.players[this.state.currentTurn];
+                const colorText = nextPlayer.id === 1 ? 'text-rose-600' : 'text-blue-600';
+                document.getElementById('dice-result-label').textContent = 'Siap Dikocok!';
+                this.setStatusBanner(`Giliran <span class="${colorText} font-bold">${this.escapeHTML(nextPlayer.name)}</span> mengocok dadu!`);
+            },
+
+            // Handle Victory, Calculate Score, Save to Leaderboard & Launch Confetti
+            handleVictory(winner) {
+                SoundEngine.playWin();
+                this.launchConfetti();
+
+                const p1 = this.state.players[0];
+                const p2 = this.state.players[1];
+
+                // Score Formula: Base 1000 + Efficiency Bonus (fewer rolls) + Quiz Accuracy Bonus
+                const efficiencyBonus = Math.max(100, 650 - (winner.rolls * 25));
+                const quizBonus = winner.correct * 120;
+                const finalScore = 1000 + efficiencyBonus + quizBonus;
+
+                // Save record to localStorage
+                this.saveLeaderboardEntry({
+                    winnerName: winner.name,
+                    teamName: this.state.teamName,
+                    rolls: winner.rolls,
+                    correct: winner.correct,
+                    totalQuiz: winner.totalQuiz,
+                    score: finalScore,
+                    date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                });
+
+                // Populate Game Over UI
+                document.getElementById('winner-title').textContent = `Selamat, ${winner.name}! 🎉`;
+                document.getElementById('winner-team').textContent = `Tim: ${this.state.teamName}`;
+                document.getElementById('winner-score').textContent = finalScore.toLocaleString('id-ID');
+
+                document.getElementById('stat-p1-name').textContent = p1.name;
+                document.getElementById('stat-p1-pos').textContent = `${p1.pos}/25`;
+                document.getElementById('stat-p1-rolls').textContent = `${p1.rolls}x`;
+                document.getElementById('stat-p1-quiz').textContent = `${p1.correct}/${p1.totalQuiz}`;
+
+                document.getElementById('stat-p2-name').textContent = p2.name;
+                document.getElementById('stat-p2-pos').textContent = `${p2.pos}/25`;
+                document.getElementById('stat-p2-rolls').textContent = `${p2.rolls}x`;
+                document.getElementById('stat-p2-quiz').textContent = `${p2.correct}/${p2.totalQuiz}`;
+
+                this.switchScreen('screen-gameover');
+            },
+
+            // =============================================================
+            // 5. LOCALSTORAGE LEADERBOARD & PODIUM SYSTEM
+            // =============================================================
+            seedInitialLeaderboard() {
+                try {
+                    const existing = localStorage.getItem(STORAGE_KEY);
+                    if (!existing) {
+                        const demoData = [
+                            { winnerName: 'Alya (Visual)', teamName: 'IX-A • SMPN 1 Cendekia', rolls: 6, correct: 3, totalQuiz: 3, score: 1860, date: 'Contoh' },
+                            { winnerName: 'Dimas (Kinestetik)', teamName: 'X-TKJ • SMKN 2 Karya', rolls: 8, correct: 3, totalQuiz: 4, score: 1810, date: 'Contoh' },
+                            { winnerName: 'Farhan (Auditori)', teamName: 'VIII-C • SMP Harapan', rolls: 9, correct: 2, totalQuiz: 3, score: 1665, date: 'Contoh' }
+                        ];
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(demoData));
+                    }
+                } catch (e) {
+                    console.warn('localStorage tidak tersedia:', e);
+                }
+            },
+
+            getLeaderboardData() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    const parsed = raw ? JSON.parse(raw) : [];
+                    return Array.isArray(parsed)
+                        ? parsed.sort((a, b) => b.score - a.score || a.rolls - b.rolls)
+                        : [];
+                } catch (e) {
+                    return [];
+                }
+            },
+
+            saveLeaderboardEntry(entry) {
+                try {
+                    const list = this.getLeaderboardData();
+                    list.push(entry);
+                    list.sort((a, b) => b.score - a.score || a.rolls - b.rolls);
+                    const top20 = list.slice(0, 20);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(top20));
+                } catch (e) {
+                    console.warn('Gagal menyimpan skor ke localStorage:', e);
+                }
+            },
+
+            showLeaderboard() {
+                const currentVisible = ['screen-start', 'screen-game', 'screen-gameover'].find(
+                    id => !document.getElementById(id).classList.contains('hidden')
+                );
+                if (currentVisible) {
+                    this.state.previousScreen = currentVisible;
+                }
+
+                this.renderLeaderboardUI();
+                this.switchScreen('screen-leaderboard');
+            },
+
+            backFromLeaderboard() {
+                this.switchScreen(this.state.previousScreen || 'screen-start');
+            },
+
+            renderLeaderboardUI() {
+                const data = this.getLeaderboardData();
+                const podiumContainer = document.getElementById('podium-container');
+                const listContainer = document.getElementById('leaderboard-list');
+
+                // Top 3 Podium Order: [2nd Place (Left), 1st Place (Center), 3rd Place (Right)]
+                const podiumSlots = [
+                    { rank: 2, entry: data[1], height: 'h-24', bg: 'from-slate-200 to-slate-300 border-slate-400', medal: '🥈', badge: 'bg-slate-600' },
+                    { rank: 1, entry: data[0], height: 'h-32', bg: 'from-amber-200 via-yellow-300 to-amber-300 border-amber-500', medal: '👑', badge: 'bg-amber-600' },
+                    { rank: 3, entry: data[2], height: 'h-20', bg: 'from-orange-200 to-amber-200 border-orange-400', medal: '🥉', badge: 'bg-orange-600' }
+                ];
+
+                podiumContainer.innerHTML = '';
+                podiumSlots.forEach(slot => {
+                    const col = document.createElement('div');
+                    col.className = 'flex flex-col items-center text-center';
+                    if (slot.entry) {
+                        col.innerHTML = `
+                            <div class="text-2xl sm:text-3xl mb-1">${slot.medal}</div>
+                            <div class="font-bold text-slate-900 text-xs sm:text-sm truncate w-full px-1">${this.escapeHTML(slot.entry.winnerName)}</div>
+                            <div class="text-[10px] text-slate-500 truncate w-full px-1 mb-1.5">${this.escapeHTML(slot.entry.teamName)}</div>
+                            <div class="w-full ${slot.height} bg-gradient-to-t ${slot.bg} border-t-4 rounded-t-2xl flex flex-col items-center justify-center p-1 shadow-inner">
+                                <span class="text-[10px] font-extrabold text-white ${slot.badge} px-2 py-0.5 rounded-full mb-1">#${slot.rank}</span>
+                                <span class="font-extrabold text-slate-900 text-xs sm:text-base">${slot.entry.score.toLocaleString('id-ID')}</span>
+                                <span class="text-[10px] text-slate-700 font-semibold">${slot.entry.rolls}x dadu</span>
+                            </div>
+                        `;
+                    } else {
+                        col.innerHTML = `
+                            <div class="text-xl opacity-35 mb-1">${slot.medal}</div>
+                            <div class="text-xs text-slate-400 mb-1.5">Kosong</div>
+                            <div class="w-full ${slot.height} bg-slate-100 border-t-2 border-slate-200 rounded-t-2xl flex items-center justify-center text-slate-400 font-bold text-sm">
+                                #${slot.rank}
+                            </div>
+                        `;
+                    }
+                    podiumContainer.appendChild(col);
+                });
+
+                // Render Full Ranked List
+                listContainer.innerHTML = '';
+                if (data.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="text-center py-8 text-slate-400 text-sm">
+                            Belum ada riwayat pertandingan. Ayo mulai bermain dan cetak rekor pertama!
+                        </div>
+                    `;
+                    return;
+                }
+
+                data.forEach((item, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between gap-3 bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 rounded-2xl px-3.5 py-2.5 transition';
+                    row.innerHTML = `
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-7 h-7 rounded-xl ${idx < 3 ? 'bg-amber-400 text-amber-950' : 'bg-indigo-100 text-indigo-700'} font-extrabold text-xs flex items-center justify-center shrink-0">
+                                ${idx + 1}
+                            </span>
+                            <div class="min-w-0">
+                                <div class="font-bold text-slate-800 text-xs sm:text-sm truncate">${this.escapeHTML(item.winnerName)}</div>
+                                <div class="text-[11px] text-slate-500 truncate">${this.escapeHTML(item.teamName)} • ${item.date || ''}</div>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <div class="font-extrabold text-indigo-700 text-sm">${item.score.toLocaleString('id-ID')} pts</div>
+                            <div class="text-[11px] text-slate-500">${item.rolls}x dadu • ${item.correct} benar</div>
+                        </div>
+                    `;
+                    listContainer.appendChild(row);
+                });
+            },
+
+            // =============================================================
+            // 6. CUSTOM DIALOGS & UTILITIES (NO native alert/confirm)
+            // =============================================================
+            openConfirm({ icon, title, message, onConfirm }) {
+                document.getElementById('confirm-icon').textContent = icon || '⚠️';
+                document.getElementById('confirm-title').textContent = title || 'Konfirmasi';
+                document.getElementById('confirm-message').textContent = message || 'Lanjutkan tindakan ini?';
+                this.state.confirmCallback = onConfirm;
+
+                const yesBtn = document.getElementById('btn-confirm-yes');
+                yesBtn.onclick = () => {
+                    this.closeConfirm();
+                    if (typeof this.state.confirmCallback === 'function') {
+                        this.state.confirmCallback();
+                    }
+                };
+
+                document.getElementById('modal-confirm').classList.remove('hidden');
+            },
+
+            closeConfirm() {
+                document.getElementById('modal-confirm').classList.add('hidden');
+            },
+
+            confirmReturnHome() {
+                const isGameVisible = !document.getElementById('screen-game').classList.contains('hidden');
+                if (!isGameVisible) {
+                    this.switchScreen('screen-start');
+                    return;
+                }
+                this.openConfirm({
+                    icon: '🏠',
+                    title: 'Kembali ke Menu Awal?',
+                    message: 'Progres permainan yang sedang berlangsung akan direset.',
+                    onConfirm: () => {
+                        this.state.isBusy = false;
+                        document.getElementById('modal-quiz').classList.add('hidden');
+                        this.switchScreen('screen-start');
+                    }
+                });
+            },
+
+            confirmResetLeaderboard() {
+                this.openConfirm({
+                    icon: '🗑️',
+                    title: 'Hapus Semua Skor?',
+                    message: 'Seluruh catatan skor pada papan peringkat lokal akan dihapus permanen.',
+                    onConfirm: () => {
+                        try {
+                            localStorage.removeItem(STORAGE_KEY);
+                        } catch (e) {}
+                        this.renderLeaderboardUI();
+                    }
+                });
+            },
+
+            launchConfetti() {
+                const colors = ['#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+                for (let i = 0; i < 45; i++) {
+                    const conf = document.createElement('div');
+                    conf.className = 'confetti rounded-sm';
+                    conf.style.left = `${Math.random() * 100}vw`;
+                    conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    conf.style.animationDuration = `${2 + Math.random() * 2}s`;
+                    conf.style.animationDelay = `${Math.random() * 0.4}s`;
+                    document.body.appendChild(conf);
+                    setTimeout(() => conf.remove(), 4500);
+                }
+            },
+
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            },
+
+            escapeHTML(str) {
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+        };
+
+        // Initialize application once DOM is fully loaded
+        window.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
